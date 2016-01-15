@@ -42,10 +42,10 @@ object GildedRose {
   }
 
   private def boundQuality(item: Item, quality: Int): Item = item.name match {
-    case Sulfuras => item.copy(quality = trim(quality, 80, 80))
-    case _        => item.copy(quality = trim(quality,  0, 50))
+    case Sulfuras => item.copy(quality = bound(quality, 80, 80))
+    case _        => item.copy(quality = bound(quality,  0, 50))
   }
 
-  private def trim(number: Int, lowerBound: Int, upperBound: Int): Int =
+  private def bound(number: Int, lowerBound: Int, upperBound: Int): Int =
     math.min(upperBound, math.max(lowerBound, number))
 }
