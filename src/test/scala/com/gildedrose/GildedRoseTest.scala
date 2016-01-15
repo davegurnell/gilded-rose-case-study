@@ -103,7 +103,7 @@ class GildedRoseTest  extends FreeSpec
     implicit val arbitraryItem = Arbitrary(sulfurasGen)
 
     "never has to be sold" in {
-      pending
+      pending // TODO: unsure how to test this
     }
 
     "never decreases in Quality" in {
@@ -156,7 +156,7 @@ class GildedRoseTest  extends FreeSpec
   }
 
   "\"Conjured\" items degrade in Quality twice as fast as normal items" in {
-    pending
+    pending // TODO: not yet implemented
   }
 }
 
