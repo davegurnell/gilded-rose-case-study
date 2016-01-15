@@ -1,58 +1,51 @@
 package com.gildedrose
 
-class GildedRose(val items: Array[Item]) {
+object GildedRose {
+  val Sulfuras      = "Sulfuras, Hand of Ragnaros"
+  val AgedBrie      = "Aged Brie"
+  val BackstagePass = "Backstage passes to a TAFKAL80ETC concert"
 
+  def update(items: Seq[Item]): Seq[Item] =
+    items.map(update)
 
-  def updateQuality() {
-    for (i <- 0 until items.length) {
-      if (!items(i).name.equals("Aged Brie")
-        && !items(i).name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-        if (items(i).quality > 0) {
-          if (!items(i).name.equals("Sulfuras, Hand of Ragnaros")) {
-            items(i).quality = items(i).quality - 1
-          }
-        }
-      } else {
-        if (items(i).quality < 50) {
-          items(i).quality = items(i).quality + 1
+  def update(item: Item): Item =
+    updateSellIn(updateQuality(item))
 
-          if (items(i).name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-            if (items(i).sellIn < 11) {
-              if (items(i).quality < 50) {
-                items(i).quality = items(i).quality + 1
-              }
-            }
-
-            if (items(i).sellIn < 6) {
-              if (items(i).quality < 50) {
-                items(i).quality = items(i).quality + 1
-              }
-            }
-          }
-        }
+  private def updateQuality(item: Item): Item = item match {
+    case Item(AgedBrie, sellIn, quality) =>
+      sellIn match {
+        case n if n < 0  => boundQuality(item, quality + 2)
+        case n           => boundQuality(item, quality + 1)
       }
 
-      if (!items(i).name.equals("Sulfuras, Hand of Ragnaros")) {
-        items(i).sellIn = items(i).sellIn - 1
+    case Item(BackstagePass, sellIn, quality) =>
+      sellIn match {
+        case n if n <  0 => boundQuality(item, 0)
+        case n if n <  6 => boundQuality(item, quality + 3)
+        case n if n < 11 => boundQuality(item, quality + 2)
+        case n           => boundQuality(item, quality + 1)
       }
 
-      if (items(i).sellIn < 0) {
-        if (!items(i).name.equals("Aged Brie")) {
-          if (!items(i).name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-            if (items(i).quality > 0) {
-              if (!items(i).name.equals("Sulfuras, Hand of Ragnaros")) {
-                items(i).quality = items(i).quality - 1
-              }
-            }
-          } else {
-            items(i).quality = items(i).quality - items(i).quality
-          }
-        } else {
-          if (items(i).quality < 50) {
-            items(i).quality = items(i).quality + 1
-          }
-        }
+    case Item(Sulfuras, sellIn, quality) =>
+      boundQuality(item, quality)
+
+    case Item(_, sellIn, quality) =>
+      sellIn match {
+        case n if n <  0 => boundQuality(item, quality - 2)
+        case n           => boundQuality(item, quality - 1)
       }
-    }
   }
+
+  private def updateSellIn(item: Item): Item = item.name match {
+    case Sulfuras => item // Don't update sellIn
+    case _        => item.copy(sellIn = item.sellIn - 1)
+  }
+
+  private def boundQuality(item: Item, quality: Int): Item = item.name match {
+    case Sulfuras => item.copy(quality = trim(quality, 80, 80))
+    case _        => item.copy(quality = trim(quality,  0, 50))
+  }
+
+  private def trim(number: Int, lowerBound: Int, upperBound: Int): Int =
+    math.min(upperBound, math.max(lowerBound, number))
 }

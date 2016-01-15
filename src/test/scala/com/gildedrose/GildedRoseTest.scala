@@ -5,7 +5,7 @@ import org.scalatest.prop._
 import org.scalacheck._
 import org.scalacheck.Prop.BooleanOperators
 
-class GildedRoseTest  extends FreeSpec
+class GildedRoseTest extends FreeSpec
   with Matchers
   with Checkers
   with GildedRoseFixtures {
@@ -13,7 +13,7 @@ class GildedRoseTest  extends FreeSpec
   "\"Non-special\" products" - {
     val itemNameGen = Gen.oneOf(itemNames diff Seq(agedBrie, backstagePass, sulfuras))
 
-    "Once the sell by date has passed, Quality degrades twice as fast" - {
+    "Once the sell by date has passed, Quality degrades twice as fast" in {
       implicit val arbitraryItem = Arbitrary(itemGen(
         itemNameGen = itemNameGen,       // non-special items
         sellInGen   = Gen.choose(1, 50), // one or more days left
@@ -23,13 +23,12 @@ class GildedRoseTest  extends FreeSpec
       check { (item: Item) =>
         val original = item.quality
         // Update when sellIn > 0:
-        val updated1 = updateQuality(item).quality
+        val updated1 = update(item).quality
         // Update when sellIn < 0:
-        val updated2 = updateQuality(item.copy(sellIn = -item.sellIn)).quality
+        val updated2 = update(item.copy(sellIn = -item.sellIn)).quality
 
         // Quality always decreases towards zero:
         val assertion1 = (updated1 > 0) ==> (updated1 > updated2)
-
         // Quality decreases double after sellIn date:
         val assertion2 = (updated2 > 0) ==> ((original - updated2) == (original - updated1) * 2)
 
@@ -47,9 +46,9 @@ class GildedRoseTest  extends FreeSpec
       }
     }
 
-    "after updateQuality" in {
+    "after update" in {
       check { (item: Item) =>
-        updateQuality(item).quality >= 0
+        update(item).quality >= 0
       }
     }
   }
@@ -59,10 +58,13 @@ class GildedRoseTest  extends FreeSpec
 
     "actually increases in Quality the older it gets (but doesn't go above 50)" in {
       check { (item: Item) =>
-        val original = item.quality
-        val updated  = updateQuality(item).quality
-        (original == 50) ==> (updated == original) ||
-        (original  < 50) ==> (updated > original)
+        val original   = item.quality
+        val updated    = update(item).quality
+
+        val assertion1 = (original == 50) ==> (updated == original)
+        val assertion2 = (original  < 50) ==> (updated > original)
+
+        assertion1 || assertion2
       }
     }
   }
@@ -76,9 +78,9 @@ class GildedRoseTest  extends FreeSpec
       }
     }
 
-    "is never more than 50 after updateQuality" in {
+    "is never more than 50 after update" in {
       check { (item: Item) =>
-        updateQuality(item).quality <= 50
+        update(item).quality <= 50
       }
     }
   }
@@ -92,9 +94,9 @@ class GildedRoseTest  extends FreeSpec
       }
     }
 
-    "is always 80 after updateQuality" in {
+    "is always 80 after update" in {
       check { (item: Item) =>
-        updateQuality(item).quality == 80
+        update(item).quality == 80
       }
     }
   }
@@ -103,22 +105,24 @@ class GildedRoseTest  extends FreeSpec
     implicit val arbitraryItem = Arbitrary(sulfurasGen)
 
     "never has to be sold" in {
-      pending // TODO: unsure how to test this
+      check { (item: Item) =>
+        update(item).sellIn == item.sellIn
+      }
     }
 
     "never decreases in Quality" in {
       check { (item: Item) =>
-        updateQuality(item).quality == item.quality
+        update(item).quality == item.quality
       }
     }
   }
 
   "\"Backstage passes\", like aged brie, increases in Quality as it's SellIn value approaches" - {
     "Quality drops to 0 after the concert" in {
-      implicit val arbitraryItem = Arbitrary(backstagePassGen(sellInGen = Gen.choose(-50, 0)))
+      implicit val arbitraryItem = Arbitrary(backstagePassGen(sellInGen = Gen.choose(-50, -1)))
 
       check { (item: Item) =>
-        val actual   = updateQuality(item).quality
+        val actual   = update(item).quality
         val expected = 0
         actual == expected
       }
@@ -128,7 +132,7 @@ class GildedRoseTest  extends FreeSpec
       implicit val arbitraryItem = Arbitrary(backstagePassGen(sellInGen = Gen.choose(1, 5)))
 
       check { (item: Item) =>
-        val actual   = updateQuality(item).quality
+        val actual   = update(item).quality
         val expected = math.min(50, item.quality + 3)
         actual == expected
       }
@@ -138,7 +142,7 @@ class GildedRoseTest  extends FreeSpec
       implicit val arbitraryItem = Arbitrary(backstagePassGen(sellInGen = Gen.choose(6, 10)))
 
       check { (item: Item) =>
-        val actual   = updateQuality(item).quality
+        val actual   = update(item).quality
         val expected = math.min(50, item.quality + 2)
         actual == expected
       }
@@ -148,15 +152,11 @@ class GildedRoseTest  extends FreeSpec
       implicit val arbitraryItem = Arbitrary(backstagePassGen(sellInGen = Gen.choose(11, 500)))
 
       check { (item: Item) =>
-        val actual   = updateQuality(item).quality
+        val actual   = update(item).quality
         val expected = math.min(50, item.quality + 1)
         actual == expected
       }
     }
-  }
-
-  "\"Conjured\" items degrade in Quality twice as fast as normal items" in {
-    pending // TODO: not yet implemented
   }
 }
 
@@ -166,8 +166,8 @@ trait GildedRoseGenerators {
   val agedBrie      = "Aged Brie"
   val backstagePass = "Backstage passes to a TAFKAL80ETC concert"
   val sulfuras      = "Sulfuras, Hand of Ragnaros"
-  val regularItem   = "Regular Shop Item"
-  val itemNames     = Seq(agedBrie, backstagePass, sulfuras, regularItem)
+  val woolCloth     = "Woll Cloth"
+  val itemNames     = Seq(agedBrie, backstagePass, sulfuras, woolCloth)
 
   val itemNameGen = Gen.oneOf(itemNames)
   val sellInGen   = Gen.choose(-50, 50)
@@ -213,15 +213,9 @@ trait GildedRoseHelpers {
   def copyItems(items: Seq[Item]) : Seq[Item] =
     items.map(_.copy())
 
-  def updateQuality(item: Item): Item = {
-    val copiedItem = item.copy()
-    new GildedRose(Array(copiedItem)).updateQuality()
-    copiedItem
-  }
+  def update(item: Item): Item =
+    GildedRose.update(item)
 
-  def updateQuality(items: Seq[Item]): Seq[Item] = {
-    val copiedItems = copyItems(items)
-    new GildedRose(copiedItems.toArray).updateQuality()
-    copiedItems
-  }
+  def update(items: Seq[Item]): Seq[Item] =
+    GildedRose.update(items)
 }
