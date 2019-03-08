@@ -1,7 +1,8 @@
-name := "gildedrose"
+name         := "gildedrose"
+organization := "com.example"
+version      := "1.0"
+scalaVersion := "2.12.8"
 
-version := "1.0"
-
-scalaVersion := "2.11.7"
-
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test"
+libraryDependencies ++= Seq(
+  "org.scalatest" %% "scalatest" % "3.0.1" % Test
+)
