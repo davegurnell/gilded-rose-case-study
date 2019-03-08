@@ -3,56 +3,61 @@ package com.gildedrose
 case class Item(name: String, var sellIn: Int, var quality: Int)
 
 object GildedRose {
-  def updateQuality(items: List[Item]): Unit = {
-    for(i <- 0 until items.length) {
-      if (!items(i).name.equals("Aged Brie")
-        && !items(i).name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-        if (items(i).quality > 0) {
-          if (!items(i).name.equals("Sulfuras, Hand of Ragnaros")) {
-            items(i).quality = items(i).quality - 1
-          }
-        }
-      } else {
-        if (items(i).quality < 50) {
-          items(i).quality = items(i).quality + 1
+  def updateQuality(items: List[Item]): List[Item] =
+    items.map(updateQuality)
 
-          if (items(i).name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-            if (items(i).sellIn < 11) {
-              if (items(i).quality < 50) {
-                items(i).quality = items(i).quality + 1
-              }
-            }
+  def updateQuality(item: Item): Item = {
+    val copy = item.copy()
 
-            if (items(i).sellIn < 6) {
-              if (items(i).quality < 50) {
-                items(i).quality = items(i).quality + 1
-              }
-            }
-          }
+    if (!copy.name.equals("Aged Brie")
+      && !copy.name.equals("Backstage passes to a TAFKAL80ETC concert")) {
+      if (copy.quality > 0) {
+        if (!copy.name.equals("Sulfuras, Hand of Ragnaros")) {
+          copy.quality = copy.quality - 1
         }
       }
+    } else {
+      if (copy.quality < 50) {
+        copy.quality = copy.quality + 1
 
-      if (!items(i).name.equals("Sulfuras, Hand of Ragnaros")) {
-        items(i).sellIn = items(i).sellIn - 1
-      }
-
-      if (items(i).sellIn < 0) {
-        if (!items(i).name.equals("Aged Brie")) {
-          if (!items(i).name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-            if (items(i).quality > 0) {
-              if (!items(i).name.equals("Sulfuras, Hand of Ragnaros")) {
-                items(i).quality = items(i).quality - 1
-              }
+        if (copy.name.equals("Backstage passes to a TAFKAL80ETC concert")) {
+          if (copy.sellIn < 11) {
+            if (copy.quality < 50) {
+              copy.quality = copy.quality + 1
             }
-          } else {
-            items(i).quality = items(i).quality - items(i).quality
           }
-        } else {
-          if (items(i).quality < 50) {
-            items(i).quality = items(i).quality + 1
+
+          if (copy.sellIn < 6) {
+            if (copy.quality < 50) {
+              copy.quality = copy.quality + 1
+            }
           }
         }
       }
     }
+
+    if (!copy.name.equals("Sulfuras, Hand of Ragnaros")) {
+      copy.sellIn = copy.sellIn - 1
+    }
+
+    if (copy.sellIn < 0) {
+      if (!copy.name.equals("Aged Brie")) {
+        if (!copy.name.equals("Backstage passes to a TAFKAL80ETC concert")) {
+          if (copy.quality > 0) {
+            if (!copy.name.equals("Sulfuras, Hand of Ragnaros")) {
+              copy.quality = copy.quality - 1
+            }
+          }
+        } else {
+          copy.quality = copy.quality - copy.quality
+        }
+      } else {
+        if (copy.quality < 50) {
+          copy.quality = copy.quality + 1
+        }
+      }
+    }
+
+    copy
   }
 }
