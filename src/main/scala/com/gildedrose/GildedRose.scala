@@ -1,9 +1,7 @@
 package com.gildedrose
 
-class GildedRose(val items: Array[Item]) {
-
-
-  def updateQuality() {
+object GildedRose {
+  def updateQuality(items: List[Item]): Unit = {
     for (i <- 0 until items.length) {
       if (!items(i).name.equals("Aged Brie")
         && !items(i).name.equals("Backstage passes to a TAFKAL80ETC concert")) {
