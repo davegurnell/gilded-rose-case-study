@@ -1,63 +1,59 @@
 package com.gildedrose
 
-case class Item(name: String, var sellIn: Int, var quality: Int)
+case class Item(name: String, sellIn: Int, quality: Int) {
+  import Item.{minQuality, maxQuality}
+
+  def incQuality(amount: Int): Item =
+    copy(quality = math.min(maxQuality, math.max(minQuality, quality + amount)))
+
+  def decQuality(amt: Int): Item =
+    incQuality(-amt)
+
+  def setQuality(quality: Int): Item =
+    copy(quality = quality)
+
+  def decSellIn(): Item =
+    copy(sellIn = sellIn - 1)
+}
+
+object Item {
+  val minQuality = 0
+  val maxQuality = 50
+}
 
 object GildedRose {
+  val AgedBrie        = "Aged Brie"
+  val Sulfuras        = "Sulfuras, Hand of Ragnaros"
+  val BackstagePasses = "Backstage passes to a TAFKAL80ETC concert"
+
   def updateQuality(items: List[Item]): List[Item] =
     items.map(updateQuality)
 
   def updateQuality(item: Item): Item = {
-    val copy = item.copy()
+    item.name match {
+      case AgedBrie =>
+        item
+          .decSellIn()
+          .incQuality(1)
 
-    if (!copy.name.equals("Aged Brie")
-      && !copy.name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-      if (copy.quality > 0) {
-        if (!copy.name.equals("Sulfuras, Hand of Ragnaros")) {
-          copy.quality = copy.quality - 1
-        }
-      }
-    } else {
-      if (copy.quality < 50) {
-        copy.quality = copy.quality + 1
+      case Sulfuras =>
+        item
 
-        if (copy.name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-          if (copy.sellIn < 11) {
-            if (copy.quality < 50) {
-              copy.quality = copy.quality + 1
-            }
-          }
+      case BackstagePasses if item.sellIn < 1 =>
+        item
+          .decSellIn()
+          .setQuality(0)
 
-          if (copy.sellIn < 6) {
-            if (copy.quality < 50) {
-              copy.quality = copy.quality + 1
-            }
-          }
-        }
-      }
+      case BackstagePasses =>
+        val change = if(item.sellIn <= 5) 3 else if(item.sellIn <= 10) 2 else 1
+        item
+          .decSellIn()
+          .incQuality(change)
+
+      case _ =>
+        item
+          .decSellIn()
+          .decQuality(if(item.sellIn < 1) 2 else 1)
     }
-
-    if (!copy.name.equals("Sulfuras, Hand of Ragnaros")) {
-      copy.sellIn = copy.sellIn - 1
-    }
-
-    if (copy.sellIn < 0) {
-      if (!copy.name.equals("Aged Brie")) {
-        if (!copy.name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-          if (copy.quality > 0) {
-            if (!copy.name.equals("Sulfuras, Hand of Ragnaros")) {
-              copy.quality = copy.quality - 1
-            }
-          }
-        } else {
-          copy.quality = copy.quality - copy.quality
-        }
-      } else {
-        if (copy.quality < 50) {
-          copy.quality = copy.quality + 1
-        }
-      }
-    }
-
-    copy
   }
 }
