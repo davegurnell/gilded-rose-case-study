@@ -1,8 +1,10 @@
 package com.gildedrose
 
+case class Item(name: String, var sellIn: Int, var quality: Int)
+
 object GildedRose {
   def updateQuality(items: List[Item]): Unit = {
-    for (i <- 0 until items.length) {
+    for(i <- 0 until items.length) {
       if (!items(i).name.equals("Aged Brie")
         && !items(i).name.equals("Backstage passes to a TAFKAL80ETC concert")) {
         if (items(i).quality > 0) {
